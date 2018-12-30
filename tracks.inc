@@ -19,6 +19,8 @@
 
 include_once 'coordinate.inc';
 
+define('encodingPrecision', 5);
+
 class Tracks
 {
     private $logger;
@@ -37,7 +39,36 @@ class Tracks
         {
             $this->__calculate_waypoints($waypoint_dist, $length_unit);
         }
-
+?>
+<script type="text/javascript">
+function get_track(index) {
+<?php
+    foreach ($this->tracks as $index => $track)
+    {
+?>
+    <?php if ($index > 0)
+    {
+        print("} else ");
+    }?>if (index == <?php print($index); ?>) {
+        return <?php print("\"" . $this->__polyline_encode($track) . "\""); ?>;
+<?php
+    }
+?>
+    }
+}
+function add_tracks(map) {
+    for (var i = 0; i < <?php print(count($this->tracks)); ?>; i++) {
+        var tracklayer = new OpenLayers.Layer.Vector("track_" + i);
+        tracklayer.style = {strokeColor: "green", strokeWidth: 5, strokeOpacity: 0.5}
+        tracklayer.projection = new OpenLayers.Projection("EPSG:4326");
+        var format = new OpenLayers.Format.EncodedPolyline({geometryType:"linestring"});
+        tracklayer.addFeatures(new OpenLayers.Feature.Vector(
+            format.read(get_track(i)).geometry.transform('EPSG:4326', 'EPSG:3857')));
+        map.addLayer(tracklayer);
+    }
+}
+</script>
+<?php
         // DEBUG: log tracks
         /*
         $this->logger->log("DEBUG");
@@ -219,6 +250,65 @@ class Tracks
             $this->__generate_waypoints_track($track, $waypt_distance, $length_unit);
             $index += 1;
         }
+    }
+
+    // from https://github.com/emcconville/google-map-polyline-encoding-tool
+    // slightly adapted to use with hikingmap
+    
+    /**
+     * Reduce multi-dimensional to single list
+     * @param array $array Subject array to flatten.
+     * @return array flattened
+     */
+    private function __flatten($array)
+    {
+        $flatten = array();
+        array_walk(
+            $array, // @codeCoverageIgnore
+            function ($current) use (&$flatten)
+            {
+                $flatten[] = $current->get_lat();
+                $flatten[] = $current->get_lon();
+            }
+        );
+        return $flatten;
+    }
+
+    /**
+     * Apply Google Polyline algorithm to list of points.
+     * @param array $points List of points to encode. Can be a list of tuples,
+     *                      or a flat, one-dimensional array.
+     * @return string encoded string
+     */
+    private function __polyline_encode($points)
+    {
+        $points = $this->__flatten($points);
+        $encodedString = '';
+        $index = 0;
+        $previous = array(0,0);
+        foreach ($points as $number)
+        {
+            $number = (float)($number);
+            $number = (int)round($number * pow(10, encodingPrecision));
+            $diff = $number - $previous[$index % 2];
+            $previous[$index % 2] = $number;
+            $number = $diff;
+            $index++;
+            $number = ($number < 0) ? ~($number << 1) : ($number << 1);
+            $chunk = '';
+            while ($number >= 0x20)
+            {
+                $chunk .= chr((0x20 | ($number & 0x1f)) + 63);
+                $number >>= 5;
+            }
+            $chunk .= chr($number + 63);
+            if ($chunk == "\\")
+            {
+                $chunk = "\\\\";
+            }
+            $encodedString .= $chunk;
+        }
+        return $encodedString;
     }
 }
 

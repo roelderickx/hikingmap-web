@@ -34,7 +34,7 @@ class Logger
             
             if ($newline)
             {
-                print('<br/>');
+                print("<br/>\n");
             }
         }
     }

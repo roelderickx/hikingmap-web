@@ -276,20 +276,8 @@ class TrackFinder
         {
             if ($page != null)
             {
-                $this->logger->log($page->to_string());
-                //$outfilename = $this->parameters->output_basename +
-                //               $page->pageindex->zfill(count(str(count($this->pages)))) .
-                //               '.' . $this->parameters->output_format;
-                if ($page->get_pageindex() == 0)
-                {
-                    //$page->render($this->parameters, $this->tempoverviewfile, $outfilename);
-                    $page->render($this->parameters, '', '');
-                }
-                else
-                {
-                    //$page->render($this->parameters, $this->tempwaypointfile, $outfilename);
-                    $page->render($this->parameters, '', '');
-                }
+                print($page->to_string() . "<br/>\n");
+                $page->render($this->parameters);
             }
         }
     }

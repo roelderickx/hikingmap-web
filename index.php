@@ -72,6 +72,7 @@
         </tr>
         </table>
     </form>
+    Powered by <a href="https://github.com/roelderickx/hikingmap-web">hikingmap-web</a>.
 </body>
 </html>
 

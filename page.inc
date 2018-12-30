@@ -20,7 +20,8 @@
 include_once 'area.inc';
 include_once 'coordinate.inc';
 
-//define('inch', 2.54);
+define('screenDpi', 72);
+define('inch', 2.54);
 
 class Page extends Area
 {
@@ -51,16 +52,6 @@ class Page extends Area
         $this->set_orientation($this->orientation_unknown);
         $this->track_area = new Area(new Coordinate(0.0, 0.0), new Coordinate(0.0, 0.0));
     }
-    
-    /*function __clone($page)
-    {
-        $this->set_page_area($page);
-        $this->scale = $page->scale;
-        $this->pagewidth = $page->pagewidth;
-        $this->pageheight = $page->pageheight;
-        $this->pageoverlap = $page->pageoverlap;
-        $this->set_orientation($page->orientation);
-    }*/
     
     function get_page_width()
     {
@@ -316,46 +307,57 @@ class Page extends Area
         $this->maxlat = $this->minlat + $this->pagesizelat_full;
     }
     
-    function render($parameters, $tempgpxfile, $filename)
+    function render($parameters)
     {
-        echo 'Rendering page ' . $this->pageindex . ' -- TO BE IMPLEMENTED<br/>';
-        /*$merc = $mapnik->Projection('+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +no_defs +over');
-        $longlat = $mapnik->Projection('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs');
-        $imgwidth = $math->trunc((($this->get_page_width() / $inch) * $parameters->dpi));
-        $imgheight = $math->trunc((($this->get_page_height() / $inch) * $parameters->dpi));
-        $m = $mapnik->Map($imgwidth, $imgheight);
-        $mapnik->load_map($m, $parameters->mapstyle);
-        $mapnik->load_map($m, $parameters->hikingmapstyle);
-        $m->srs = $merc->params();
-        if (method_exists($mapnik, 'Box2d')) {
-            $bbox = $mapnik->Box2d($this->minlon, $this->minlat, $this->maxlon, $this->maxlat);
+        $pagevar = "page" . $this->pageindex;
+        $pagename = "\"page_" . $this->pageindex . "\"";
+
+        $width = 300;
+        $height = 300 * max($this->pagewidth, $this->pageheight)
+                      / min($this->pagewidth, $this->pageheight);
+        if ($this->orientation == $this->orientation_landscape)
+        {
+            $width = $height;
+            $height = 300;
         }
-        else {
-            $bbox = $mapnik->Envelope($this->minlon, $this->minlat, $this->maxlon, $this->maxlat);
-        }
-        $transform = $mapnik->ProjTransform($longlat, $merc);
-        $merc_bbox = $transform->forward($bbox);
-        $m->zoom_to_box($merc_bbox);
-        foreach( pyjslib_list($parameters->gpxfiles) as $gpxfile ) {
-            $gpxlayer = $mapnik->Layer('GPXLayer');
-            $gpxlayer->datasource = py2php_kwargs_method_call($mapnik, null, 'Ogr', [], ["file" => $gpxfile,"layer" => 'tracks']);
-            $gpxlayer->styles[] = 'GPXStyle';
-            $m->layers[] = $gpxlayer;
-        }
-        if (($this->pageindex == 0) && $parameters->generate_overview) {
-            $overviewlayer = $mapnik->Layer('OverviewLayer');
-            $overviewlayer->datasource = py2php_kwargs_method_call($mapnik, null, 'Ogr', [], ["file" => $tempgpxfile,"layer" => 'tracks']);
-            $overviewlayer->styles[] = 'GPXStyle';
-            $m->layers[] = $overviewlayer;
-        }
-        else if (($this->pageindex > 0) && ($parameters->waypt_distance > 0)) {
-            $waypointlayer = $mapnik->Layer('WaypointLayer');
-            $waypointlayer->datasource = py2php_kwargs_method_call($mapnik, null, 'Ogr', [], ["file" => $tempgpxfile,"layer" => 'waypoints']);
-            $waypointlayer->styles[] = 'WaypointStyle';
-            $m->layers[] = $waypointlayer;
-        }
-        $mapnik->render_to_file($m, $filename, $parameters->output_format, $parameters->scale_factor);
-        */
+        $style = sprintf("\"width:%d; height:%d\"", $width, $height);
+        
+        $lon = ($this->maxlon + $this->minlon) / 2;
+        $lat = ($this->maxlat + $this->minlat) / 2;
+        
+        /*$width_cm = $width / screenDpi * inch;
+        $delta_lon = $this->track_area->maxlon - $this->track_area->minlon;
+        $scale_lon = $this->_convert_degrees_lon_to_cm($delta_lon,
+                                                       $this->track_area->minlat) / $width_cm;
+        $height_cm = $height / screenDpi * inch;
+        $delta_lat = $this->track_area->maxlat - $this->track_area->minlat;
+        $scale_lat = $this->_convert_degrees_lat_to_cm($delta_lat) / $height_cm;
+        $previewscale = max($scale_lon, $scale_lat);*/
+?>
+    <div style=<?php print($style); ?> id=<?php print($pagename); ?>></div>
+    <script type="text/javascript">
+        var <?php print($pagevar); ?> = new OpenLayers.Map (<?php print($pagename); ?>, {
+            controls:[ new OpenLayers.Control.Attribution() ],
+            maxExtent: new OpenLayers.Bounds(-20037508.34, -20037508.34, 20037508.34,  20037508.34),
+            maxResolution: 156543.0399,
+            numZoomLevels: 19,
+            units: 'm',
+            projection: new OpenLayers.Projection("EPSG:900913"),
+            displayProjection: new OpenLayers.Projection("EPSG:4326")
+        } );
+
+        layerMapnik = new OpenLayers.Layer.OSM.Mapnik("Mapnik");
+        <?php print($pagevar); ?>.addLayer(layerMapnik);
+        
+        add_tracks(<?php print($pagevar); ?>);
+
+        var lon=<?php print(sprintf("%.5f", $lon)); ?>;
+        var lat=<?php print(sprintf("%.5f", $lat)); ?>;
+        var zoom=12;
+        var lonLat = new OpenLayers.LonLat(lon, lat).transform(new OpenLayers.Projection("EPSG:4326"), <?php print($pagevar); ?>.getProjectionObject());
+        <?php print($pagevar); ?>.setCenter(lonLat, zoom);
+    </script>
+<?php
     }
     
     function to_string()

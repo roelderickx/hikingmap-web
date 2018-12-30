@@ -22,16 +22,19 @@ include 'parameters.inc';
 include 'tracks.inc';
 include 'trackfinder.inc';
 
+//<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+//    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
     <title>Hikingmap web</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+    <script src="https://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
 </head>
 <body>
-    <?php
-    $logger = new Logger(true);
+<?php
+    $logger = new Logger(false);
     
     $params = new Parameters($logger);
     $params->verify_parameters() or die("Parameters incorrect.");
@@ -43,7 +46,7 @@ include 'trackfinder.inc';
     
     $trackfinder = new TrackFinder($logger, $params, $tracks);
     $trackfinder->render();
-    ?>
+?>
 </body>
 </html>
 
