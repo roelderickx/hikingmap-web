@@ -36,11 +36,10 @@ include 'trackfinder.inc';
     $params = new Parameters($logger);
     $params->verify_parameters() or die("Parameters incorrect.");
 
-    $tracks = new Tracks($logger, $_FILES);
-    /*if ($params->render_waypts)
-    {
-        $tracks->calculate_waypoints($params->waypt_distance, $params->length_unit);
-    }*/
+    $tracks = new Tracks($logger, $_FILES,
+                         $params->render_waypoints(),
+                         $params->get_waypoint_distance(),
+                         $params->get_length_unit());
     
     $trackfinder = new TrackFinder($logger, $params, $tracks);
     $trackfinder->render();

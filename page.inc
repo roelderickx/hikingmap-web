@@ -33,6 +33,7 @@ class Page extends Area
     private $pagewidth;
     private $pageheight;
     private $pageoverlap;
+    private $orientation;
     private $track_area;
     private $pagesizelon;
     private $pagesizelat;

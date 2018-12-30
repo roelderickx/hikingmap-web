@@ -23,15 +23,21 @@ class Tracks
 {
     private $logger;
     private $tracks;
-    //private $waypoints;
+    private $waypoints;
     
-    function __construct($logger, $files)
+    function __construct($logger, $files, $render_waypoints, $waypoint_dist, $length_unit)
     {
         $this->logger = $logger;
         
         $this->tracks = array();
         $this->parse_files($files);
         
+        $this->waypoints = array();
+        if ($render_waypoints)
+        {
+            $this->__calculate_waypoints($waypoint_dist, $length_unit);
+        }
+
         // DEBUG: log tracks
         /*
         $this->logger->log("DEBUG");
@@ -44,6 +50,17 @@ class Tracks
             {
                 $this->logger->log($coord->to_string());
             }
+        }
+        */
+        
+        // DEBUG: log waypoints
+        /*
+        $this->logger->log("DEBUG");
+        $this->logger->log("Amount of waypoints: " . count($this->waypoints));
+        
+        foreach ($this->waypoints as $index => $coord)
+        {
+            $this->logger->log("Waypoint " . $index . ': ' . $coord->to_string());
         }
         */
     }
@@ -143,66 +160,65 @@ class Tracks
     {
         return $this->tracks;
     }
-}
-/*
-    function __del__() {
-        if ($this->tempwaypointfile && $os->path->isfile($this->tempwaypointfile)) {
-            pyjslib_printnl('Removing temp file ' . $this->tempwaypointfile);
-            $os->remove($this->tempwaypointfile);
-        }
-    }
     
-    function __write_wpt($gpxnode,$coord1,$coord2,$cumul_dist_at_coord1,$waypt_distance,$length_unit) {
-        if ($coord1->equals($coord2)) {
-            if (($cumul_dist_at_coord1 == 0)) {
-                $coord1->append_to_xml_node($gpxnode, '0');
+    function __add_wpt($coord1, $coord2, $cumul_dist_at_coord1, $waypt_distance, $length_unit)
+    {
+        if ($coord1->equals($coord2))
+        {
+            if ($cumul_dist_at_coord1 == 0)
+            {
+                $this->waypoints[0] = $coord1;
             }
             return $cumul_dist_at_coord1;
         }
-        else {
-            $cumul_dist_at_coord2 = ($cumul_dist_at_coord1 + $coord1->distance_haversine($coord2, $length_unit));
-            foreach( pyjslib_list(pyjslib_range((pyjslib_int($cumul_dist_at_coord1) + 1), (pyjslib_int($cumul_dist_at_coord2) + 1))) as $dist ) {
-                if ((($dist % $waypt_distance) == 0)) {
-                    $d = ($dist - $cumul_dist_at_coord1);
-                    $waypt = $coord1->calc_waypoint_on_line($coord2, $d, $length_unit);
-                    $waypt->append_to_xml_node($gpxnode, pyjslib_str($dist));
+        else
+        {
+            $cumul_dist_at_coord2 = $cumul_dist_at_coord1 +
+                                    $coord1->distance_haversine($coord2, $length_unit);
+            
+            if ((int)($cumul_dist_at_coord1) + 1 <= (int)$cumul_dist_at_coord2)
+            {
+                foreach (range((int)($cumul_dist_at_coord1) + 1,
+                               (int)($cumul_dist_at_coord2)) as $dist)
+                {
+                    if ($dist % $waypt_distance == 0)
+                    {
+                        $d = $dist - $cumul_dist_at_coord1;
+                        $waypt = $coord1->calc_waypoint_on_line($coord2, $d, $length_unit);
+                        $this->waypoints[$dist] = $waypt;
+                    }
                 }
             }
             return $cumul_dist_at_coord2;
         }
     }
     
-    function __generate_waypoints_track($gpxnode,$track,$waypt_distance,$length_unit) {
+    function __generate_waypoints_track($track, $waypt_distance, $length_unit)
+    {
         $cumulDistance = 0;
-        $prev_coord = new Coordinate($track[0]->lon, $track[0]->lat);
-        foreach( pyjslib_list(array_slice($track, 0, null)) as $trackpoint ) {
-            $coord = new Coordinate($trackpoint->lon, $trackpoint->lat);
-            $cumulDistance = $this->__write_wpt($gpxnode, $prev_coord, $coord, $cumulDistance, $waypt_distance, $length_unit);
+        $prev_coord = new Coordinate($track[0]->get_lon(), $track[0]->get_lat());
+        foreach ($track as $trackpoint)
+        {
+            $coord = new Coordinate($trackpoint->get_lon(), $trackpoint->get_lat());
+            $cumulDistance = $this->__add_wpt($prev_coord, $coord, $cumulDistance,
+                                              $waypt_distance, $length_unit);
             $prev_coord = $coord;
         }
-        pyjslib_printnl(sprintf('Total track distance: %.2f %s', $cumulDistance, $length_unit));
+        $this->logger->log(sprintf('Total track distance: %.2f %s',
+                                   $cumulDistance, $length_unit));
     }
     
-    function calculate_waypoints($waypt_distance,$length_unit) {
-        $wayptdoc = minidom::Document();
-        $gpxnode = $wayptdoc->createElement('gpx');
-        $gpxnode->setAttribute('version', '1.0');
-        $gpxnode->setAttribute('creator', 'hikingmap');
-        $gpxnode->setAttribute('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
-        $gpxnode->setAttribute('xmlns', 'http://www.topografix.com/GPX/1/0');
-        $gpxnode->setAttribute('xsi:schemaLocation', 'http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd');
+    function __calculate_waypoints($waypt_distance, $length_unit)
+    {
         $index = 0;
-        foreach( pyjslib_list($this->tracks) as $track ) {
-            pyjslib_printnl('Generating waypoints for track ' . pyjslib_str($index) . ': ' . $track[0]->to_string() . ' - ' . $track[-1]->to_string());
-            $this->__generate_waypoints_track($gpxnode, $track, $waypt_distance, $length_unit);
+        foreach ($this->tracks as $track)
+        {
+            $this->logger->log('Generating waypoints for track ' . $index . ': ' .
+                               $track[0]->to_string() . ' - ' .
+                               $track[count($track)-1]->to_string());
+            $this->__generate_waypoints_track($track, $waypt_distance, $length_unit);
             $index += 1;
         }
-        $wayptdoc->appendChild($gpxnode);
-        list($fd, $this->tempwaypointfile) = py2php_kwargs_method_call($tempfile, null, 'mkstemp', [], ["prefix" => 'hikingmap_temp_waypoints',"suffix" => '.gpx']);
-        $f = $os->fdopen($fd, 'w');
-        $wayptdoc->writexml($f, '', '  ', '
-', 'ISO-8859-1');
-        $f->close();
     }
-    */
+}
 

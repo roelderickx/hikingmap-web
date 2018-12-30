@@ -114,5 +114,20 @@ class Parameters
     {
         return (float)($this->pageoverlap) / 10.0;
     }
+    
+    function render_waypoints()
+    {
+        return $this->render_waypts;
+    }
+    
+    function get_waypoint_distance()
+    {
+        return $this->waypt_distance;
+    }
+    
+    function get_length_unit()
+    {
+        return $this->length_unit;
+    }
 }
 

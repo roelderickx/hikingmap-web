@@ -41,7 +41,7 @@ class Area
     function _convert_cm_to_degrees_lon($lengthcm, $scale, $latitude)
     {
         $lengthkm = ($lengthcm / cmToKmFactor) * $scale;
-        return $lengthkm / (earthCircumference / 360.0) * cos(deg2rad($latitude));
+        return $lengthkm / ((earthCircumference / 360.0) * cos(deg2rad($latitude)));
     }
 
     function _convert_cm_to_degrees_lat($lengthcm, $scale)

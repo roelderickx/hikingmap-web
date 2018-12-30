@@ -127,17 +127,5 @@ class Coordinate
     {
         return sprintf("%.6f,%.6f", $this->lon, $this->lat);
     }
-    
-    /*function append_to_xml_node($gpxnode, $name)
-    {
-        $wayptnode = $gpxnode->ownerDocument->createElement('wpt');
-        $wayptnode->setAttribute('lat', pyjslib_str($this->lat));
-        $wayptnode->setAttribute('lon', pyjslib_str($this->lon));
-        $wayptnamenode = $gpxnode->ownerDocument->createElement('name');
-        $wayptnametext = $gpxnode->ownerDocument->createTextNode($name);
-        $wayptnamenode->appendChild($wayptnametext);
-        $wayptnode->appendChild($wayptnamenode);
-        $gpxnode->appendChild($wayptnode);
-    }*/
 }
 

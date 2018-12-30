@@ -28,6 +28,7 @@ class TrackFinder
     private $currentpageindex;
     private $currentpage;
     private $firstpointaccepted;
+    private $pages;
 
     function __construct($logger, $parameters, $tracks)
     {
@@ -43,8 +44,7 @@ class TrackFinder
                            $this->__factorial(count($tracks->get_tracks())) .
                            ' track permutations');
         $min_amount_pages = -1;
-        //foreach ($this->__calc_permutations($tracks->get_tracks()) as $trackpermutation)
-        $trackpermutation = $tracks->get_tracks();
+        foreach ($this->__calc_permutations($tracks->get_tracks()) as $trackpermutation)
         {
             $this->renderedareas = array();
             $this->currentpageindex = 1;
@@ -84,21 +84,26 @@ class TrackFinder
         return $factorial;
     }
     
-    function __calc_permutations($items, $perms = array())
+    // https://stackoverflow.com/questions/5506888/permutations-all-possible-
+    //                                                    sets-of-numbers#5506933
+    function __calc_permutations(array $elements)
     {
-        if (empty($items))
+        if (count($elements) <= 1)
         {
-            return $perms;
+            yield $elements;
         }
         else
         {
-            for ($i = count($items) - 1; $i >= 0; --$i)
+            foreach ($this->__calc_permutations(array_slice($elements, 1)) as $permutation)
             {
-                $newitems = $items;
-                $newperms = $perms;
-                list($foo) = array_splice($newitems, $i, 1);
-                array_unshift($newperms, $foo);
-                return $this->__calc_permutations($newitems, $newperms);
+                foreach (range(0, count($elements) - 1) as $i)
+                {
+                    yield array_merge(
+                        array_slice($permutation, 0, $i),
+                        [$elements[0]],
+                        array_slice($permutation, $i)
+                    );
+                }
             }
         }
     }
