@@ -97,4 +97,4 @@ class Area
                (new Coordinate($this->maxlon, $this->maxlat))->to_string();
     }
 }
-
+?>

@@ -320,7 +320,7 @@ class Page extends Area
             $width = $height;
             $height = 300;
         }
-        $style = sprintf("\"width:%d; height:%d\"", $width, $height);
+        $style = sprintf("\"width:%dpx; height:%dpx\"", $width, $height);
         
         $lon = ($this->maxlon + $this->minlon) / 2;
         $lat = ($this->maxlat + $this->minlat) / 2;
@@ -334,29 +334,37 @@ class Page extends Area
         $scale_lat = $this->_convert_degrees_lat_to_cm($delta_lat) / $height_cm;
         $previewscale = max($scale_lon, $scale_lat);*/
 ?>
-    <div style=<?php print($style); ?> id=<?php print($pagename); ?>></div>
-    <script type="text/javascript">
-        var <?php print($pagevar); ?> = new OpenLayers.Map (<?php print($pagename); ?>, {
-            controls:[ new OpenLayers.Control.Attribution() ],
-            maxExtent: new OpenLayers.Bounds(-20037508.34, -20037508.34, 20037508.34,  20037508.34),
-            maxResolution: 156543.0399,
-            numZoomLevels: 19,
-            units: 'm',
-            projection: new OpenLayers.Projection("EPSG:900913"),
-            displayProjection: new OpenLayers.Projection("EPSG:4326")
-        } );
+<div style=<?php print($style); ?> id=<?php print($pagename); ?>></div>
+<script type="text/javascript">
+function render_<?php print($pagevar); ?>() {
+    var <?php print($pagevar); ?> = new OpenLayers.Map (<?php print($pagename); ?>, {
+        controls:[ new OpenLayers.Control.Attribution() ],
+        maxExtent: new OpenLayers.Bounds(-20037508.34, -20037508.34, 20037508.34,  20037508.34),
+        maxResolution: 156543.0399,
+        numZoomLevels: 19,
+        units: 'm',
+        projection: new OpenLayers.Projection("EPSG:900913"),
+        displayProjection: new OpenLayers.Projection("EPSG:4326")
+    } );
 
-        layerMapnik = new OpenLayers.Layer.OSM.Mapnik("Mapnik");
-        <?php print($pagevar); ?>.addLayer(layerMapnik);
-        
-        add_tracks(<?php print($pagevar); ?>);
-
-        var lon=<?php print(sprintf("%.5f", $lon)); ?>;
-        var lat=<?php print(sprintf("%.5f", $lat)); ?>;
-        var zoom=12;
-        var lonLat = new OpenLayers.LonLat(lon, lat).transform(new OpenLayers.Projection("EPSG:4326"), <?php print($pagevar); ?>.getProjectionObject());
-        <?php print($pagevar); ?>.setCenter(lonLat, zoom);
-    </script>
+    layerMapnik = new OpenLayers.Layer.OSM.Mapnik("Mapnik");
+    <?php print($pagevar); ?>.addLayer(layerMapnik);
+    
+    add_tracks(<?php print($pagevar); ?>);
+<?php
+    if ($parameters->render_waypoints())
+    {
+        print("    add_waypoints(" . $pagevar . ");\n");
+    }
+?>
+    var lon=<?php print(sprintf("%.5f", $lon)); ?>;
+    var lat=<?php print(sprintf("%.5f", $lat)); ?>;
+    var zoom=12;
+    var lonLat = new OpenLayers.LonLat(lon, lat).transform(new OpenLayers.Projection("EPSG:4326"), <?php print($pagevar); ?>.getProjectionObject());
+    <?php print($pagevar); ?>.setCenter(lonLat, zoom);
+}
+render_<?php print($pagevar); ?>();
+</script>
 <?php
     }
     
@@ -381,4 +389,4 @@ class Page extends Area
         return $retval;
     }
 }
-
+?>

@@ -128,4 +128,4 @@ class Coordinate
         return sprintf("%.6f,%.6f", $this->lon, $this->lat);
     }
 }
-
+?>

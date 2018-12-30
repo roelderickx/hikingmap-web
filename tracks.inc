@@ -33,67 +33,14 @@ class Tracks
         
         $this->tracks = array();
         $this->parse_files($files);
-        
+        $this->__add_tracks_as_polyline();
+
         $this->waypoints = array();
         if ($render_waypoints)
         {
             $this->__calculate_waypoints($waypoint_dist, $length_unit);
+            $this->__add_waypoints_as_polyline();
         }
-?>
-<script type="text/javascript">
-function get_track(index) {
-<?php
-    foreach ($this->tracks as $index => $track)
-    {
-?>
-    <?php if ($index > 0)
-    {
-        print("} else ");
-    }?>if (index == <?php print($index); ?>) {
-        return <?php print("\"" . $this->__polyline_encode($track) . "\""); ?>;
-<?php
-    }
-?>
-    }
-}
-function add_tracks(map) {
-    for (var i = 0; i < <?php print(count($this->tracks)); ?>; i++) {
-        var tracklayer = new OpenLayers.Layer.Vector("track_" + i);
-        tracklayer.style = {strokeColor: "green", strokeWidth: 5, strokeOpacity: 0.5}
-        tracklayer.projection = new OpenLayers.Projection("EPSG:4326");
-        var format = new OpenLayers.Format.EncodedPolyline({geometryType:"linestring"});
-        tracklayer.addFeatures(new OpenLayers.Feature.Vector(
-            format.read(get_track(i)).geometry.transform('EPSG:4326', 'EPSG:3857')));
-        map.addLayer(tracklayer);
-    }
-}
-</script>
-<?php
-        // DEBUG: log tracks
-        /*
-        $this->logger->log("DEBUG");
-        $this->logger->log("Amount of tracks: " . count($this->tracks));
-        
-        foreach ($this->tracks as $index => $track)
-        {
-            $this->logger->log("Track " . $index);
-            foreach ($track as $coord)
-            {
-                $this->logger->log($coord->to_string());
-            }
-        }
-        */
-        
-        // DEBUG: log waypoints
-        /*
-        $this->logger->log("DEBUG");
-        $this->logger->log("Amount of waypoints: " . count($this->waypoints));
-        
-        foreach ($this->waypoints as $index => $coord)
-        {
-            $this->logger->log("Waypoint " . $index . ': ' . $coord->to_string());
-        }
-        */
     }
     
     private function parse_files($files)
@@ -192,13 +139,15 @@ function add_tracks(map) {
         return $this->tracks;
     }
     
-    function __add_wpt($coord1, $coord2, $cumul_dist_at_coord1, $waypt_distance, $length_unit)
+    function __add_wpt($trackindex, $coord1, $coord2, $cumul_dist_at_coord1,
+                       $waypt_distance, $length_unit)
     {
         if ($coord1->equals($coord2))
         {
             if ($cumul_dist_at_coord1 == 0)
             {
-                $this->waypoints[0] = $coord1;
+                $this->waypoints[$trackindex] = array();
+                $this->waypoints[$trackindex][0] = $coord1;
             }
             return $cumul_dist_at_coord1;
         }
@@ -216,7 +165,7 @@ function add_tracks(map) {
                     {
                         $d = $dist - $cumul_dist_at_coord1;
                         $waypt = $coord1->calc_waypoint_on_line($coord2, $d, $length_unit);
-                        $this->waypoints[$dist] = $waypt;
+                        $this->waypoints[$trackindex][$dist] = $waypt;
                     }
                 }
             }
@@ -224,14 +173,13 @@ function add_tracks(map) {
         }
     }
     
-    function __generate_waypoints_track($track, $waypt_distance, $length_unit)
+    function __generate_waypoints_track($index, $track, $waypt_distance, $length_unit)
     {
         $cumulDistance = 0;
-        $prev_coord = new Coordinate($track[0]->get_lon(), $track[0]->get_lat());
-        foreach ($track as $trackpoint)
+        $prev_coord = $track[0];
+        foreach ($track as $coord)
         {
-            $coord = new Coordinate($trackpoint->get_lon(), $trackpoint->get_lat());
-            $cumulDistance = $this->__add_wpt($prev_coord, $coord, $cumulDistance,
+            $cumulDistance = $this->__add_wpt($index, $prev_coord, $coord, $cumulDistance,
                                               $waypt_distance, $length_unit);
             $prev_coord = $coord;
         }
@@ -241,14 +189,12 @@ function add_tracks(map) {
     
     function __calculate_waypoints($waypt_distance, $length_unit)
     {
-        $index = 0;
-        foreach ($this->tracks as $track)
+        foreach ($this->tracks as $index => $track)
         {
             $this->logger->log('Generating waypoints for track ' . $index . ': ' .
                                $track[0]->to_string() . ' - ' .
                                $track[count($track)-1]->to_string());
-            $this->__generate_waypoints_track($track, $waypt_distance, $length_unit);
-            $index += 1;
+            $this->__generate_waypoints_track($index, $track, $waypt_distance, $length_unit);
         }
     }
 
@@ -302,13 +248,84 @@ function add_tracks(map) {
                 $number >>= 5;
             }
             $chunk .= chr($number + 63);
-            if ($chunk == "\\")
-            {
-                $chunk = "\\\\";
-            }
+            $chunk = str_replace("\\", "\\\\", $chunk);
             $encodedString .= $chunk;
         }
         return $encodedString;
     }
+    
+    private function __add_tracks_as_polyline()
+    {
+?>
+<script type="text/javascript">
+function get_track(index) {
+<?php
+    foreach ($this->tracks as $index => $track)
+    {
+        if ($index > 0)
+        {
+            print("    } else ");
+        }
+        else
+        {
+            print("    ");
+        }
+        print("if (index == " . $index . ") {\n");
+        print("        return \"" . $this->__polyline_encode($track) . "\";\n");
+    }
+?>
+    }
 }
-
+function add_tracks(map) {
+    for (var i = 0; i < <?php print(count($this->tracks)); ?>; i++) {
+        var tracklayer = new OpenLayers.Layer.Vector("track_" + i);
+        tracklayer.style = {strokeColor: "green", strokeWidth: 5, strokeOpacity: 0.5}
+        tracklayer.projection = new OpenLayers.Projection("EPSG:4326");
+        var format = new OpenLayers.Format.EncodedPolyline({geometryType:"linestring"});
+        tracklayer.addFeatures(new OpenLayers.Feature.Vector(
+            format.read(get_track(i)).geometry.transform('EPSG:4326', 'EPSG:3857')));
+        map.addLayer(tracklayer);
+    }
+}
+</script>
+<?php
+    }
+    
+    private function __add_waypoints_as_polyline()
+    {
+?>
+<script type="text/javascript">
+function get_waypoints(index) {
+<?php
+    foreach ($this->waypoints as $index => $trackwaypoints)
+    {
+        if ($index > 0)
+        {
+            print("    } else ");
+        }
+        else
+        {
+            print("    ");
+        }
+        print("if (index == " . $index . ") {\n");
+        print("        return \"" . $this->__polyline_encode($trackwaypoints) . "\";\n");
+    }
+?>
+    }
+}
+function add_waypoints(map) {
+    for (var i = 0; i < <?php print(count($this->waypoints)); ?>; i++) {
+        var wptlayer = new OpenLayers.Layer.Vector("wpt_" + i);
+        //wptlayer.style = {strokeColor: "green", strokeWidth: 5, strokeOpacity: 0.5}
+        wptlayer.projection = new OpenLayers.Projection("EPSG:4326");
+        var format = new OpenLayers.Format.EncodedPolyline({geometryType:"multipoint"});
+        wptlayer.addFeatures(new OpenLayers.Feature.Vector(
+            format.read(get_waypoints(i)).geometry.transform('EPSG:4326', 'EPSG:3857')));
+        map.addLayer(wptlayer);
+    }
+}
+</script>
+<?php
+    }
+}
+?>

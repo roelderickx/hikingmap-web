@@ -44,4 +44,4 @@ class Logger
         print('<span style="color: red;">' . $text . '</span>');
     }
 }
-
+?>
