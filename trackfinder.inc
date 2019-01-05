@@ -189,6 +189,7 @@ class TrackFinder
         $center_lat = ($this->pages[0]->get_minlat() + $this->pages[0]->get_maxlat()) / 2;
 ?>
 <script type="text/javascript">
+var dragstart = null;
 function add_pages(map) {
   var page_extents = [
 <?php
@@ -211,8 +212,20 @@ function add_pages(map) {
   for (var i = 0; i < page_extents.length; i++) {
     bounds = OpenLayers.Bounds.fromArray(page_extents[i]).transform("EPSG:4326", "EPSG:900913");
     page = new OpenLayers.Marker.Box(bounds);
-    page.events.register("click", page, function (e) {
-      show_page(this.bounds);
+    page.events.register("mousedown", page, function (e) {
+      dragstart = { x: e.screenX, y: e.screenY }
+      map.events.handleBrowserEvent(e);
+      return true;
+    });
+    page.events.register("mouseup", page, function (e) {
+      if (dragstart && (Math.abs(dragstart.x - e.screenX) < 5 || Math.abs(dragstart.y - e.screenY) < 5)) {
+        dragstart = null;
+        show_page(this.bounds);
+      } else {
+        dragstart = null;
+      }
+      map.events.handleBrowserEvent(e);
+      return true;
     });
     pages.addMarker(page);
   }
