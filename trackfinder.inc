@@ -34,8 +34,6 @@ class TrackFinder
     {
         $this->logger = $logger;
         $this->parameters = $parameters;
-        //$this->tempwaypointfile = $tracks->tempwaypointfile;
-        //$this->tempoverviewfile = '';
         $this->pages = array();
         
         $this->logger->log('Calculating track order permutation resulting ' .
@@ -67,11 +65,7 @@ class TrackFinder
                                    $min_amount_pages . ' pages');
             }
         }
-        /*if ($this->parameters->generate_overview)
-        {
-            $this->__add_page_overview();
-        }*/
-        $this->__reorder_pages();
+        $this->__add_page_overview();
     }
     
     function __factorial($number)
@@ -177,109 +171,56 @@ class TrackFinder
             return $coord;
         }
     }
-    
-    /*function __add_page_overview() {
-        $overviewdoc = minidom::Document();
-        $gpxnode = $overviewdoc->createElement('gpx');
-        $gpxnode->setAttribute('version', '1.0');
-        $gpxnode->setAttribute('creator', 'hikingmap');
-        $gpxnode->setAttribute('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
-        $gpxnode->setAttribute('xmlns', 'http://www.topografix.com/GPX/1/0');
-        $gpxnode->setAttribute('xsi:schemaLocation', 'http://www.topografix.com/GPX/1/0 http://www.topografix.com/GPX/1/0/gpx.xsd');
-        $overviewpage = new Page($this->parameters, 0);
-        foreach( pyjslib_list($this->pages) as $page ) {
-            $overviewpage->add_page_to_overview($page);
-            $tracknode = $gpxnode->ownerDocument->createElement('trk');
-            $tracksegnode = $gpxnode->ownerDocument->createElement('trkseg');
-            foreach( pyjslib_list(pyjslib_range(0, 5)) as $i ) {
-                if (in_array($i, [0, 3, 4])) {
-                    $lon = $page->minlon;
-                }
-                else {
-                    $lon = $page->maxlon;
-                }
-                if (in_array($i, [0, 1, 4])) {
-                    $lat = $page->maxlat;
-                }
-                else {
-                    $lat = $page->minlat;
-                }
-                $trackptnode = $gpxnode->ownerDocument->createElement('trkpt');
-                $trackptnode->setAttribute('lat', pyjslib_str($lat));
-                $trackptnode->setAttribute('lon', pyjslib_str($lon));
-                $tracksegnode->appendChild($trackptnode);
-            }
-            $tracknode->appendChild($tracksegnode);
-            $gpxnode->appendChild($tracknode);
-        }
-        $overviewdoc->appendChild($gpxnode);
-        list($fd, $this->tempoverviewfile) = py2php_kwargs_method_call($tempfile, null, 'mkstemp', [], ["prefix" => 'hikingmap_temp_overview',"suffix" => '.gpx']);
-        $f = $os->fdopen($fd, 'w');
-        $overviewdoc->writexml($f, '', '  ', '
-', 'ISO-8859-1');
-        $f->close();
-        $overviewpage->center_map();
-        $this->pages->insert(0, $overviewpage);
-    }*/
-    
-    function __reorder_pages()
+
+    function __add_page_overview()
     {
-        /*
-        if (($this->parameters->page_order == 'rectoverso')) {
-            $oldindex = $math->floor((count($this->pages) / 2));
-            $newindex = 1;
-            while (($oldindex < count($this->pages))) {
-                $this->pages->insert($newindex, $this->pages->pop($oldindex));
-                $oldindex += 1;
-                $newindex += 2;
-            }
-            foreach( pyjslib_list($this->pages) as $page ) {
-            }
-            pyjslib_printnl([]);
+        $overviewpage = new Page($this->parameters, 0);
+        foreach ($this->pages as $index => $page)
+        {
+            $overviewpage->add_page_to_overview($page);
         }
-        else if (($this->parameters->page_order == 'book')) {
-            $amount_empty_pages = ((4 - (count($this->pages) % 4)) % 4);
-            foreach( pyjslib_list(pyjslib_range(0, $amount_empty_pages)) as $i ) {
-                $this->pages[] = null;
-            }
-            $oldindex = (count($this->pages) - 1);
-            $newindex = 1;
-            while (($newindex < $oldindex)) {
-                $this->pages->insert($newindex, $this->pages->pop($oldindex));
-                $newindex += 2;
-            }
-            $oldindex = 0;
-            $newindex = 1;
-            while (($oldindex < count($this->pages))) {
-                $this->pages->insert($newindex, $this->pages->pop($oldindex));
-                $oldindex += 4;
-                $newindex += 4;
-            }
-            foreach( pyjslib_list($this->pages) as $page ) {
-                if (($page != null)) {
-                }
-                else {
-                }
-            }
-            pyjslib_printnl([]);
-            pyjslib_printnl('WARNING: blank pages are not generated!');
-        }
-        else {
-            pyjslib_printnl('Page order is naturalorder');
-        }
-        */
+        $overviewpage->center_map();
+        array_splice($this->pages, 0, 0, array($overviewpage));
     }
     
     function render()
     {
-        foreach ($this->pages as $page)
+        $center_lon = ($this->pages[0]->get_minlon() + $this->pages[0]->get_maxlon()) / 2;
+        $center_lat = ($this->pages[0]->get_minlat() + $this->pages[0]->get_maxlat()) / 2;
+?>
+<script type="text/javascript">
+function add_pages(map) {
+  var page_extents = [
+<?php
+        foreach ($this->pages as $index => $page)
         {
-            if ($page != null)
+            if ($index > 1)
             {
-                print($page->to_string() . "<br/>\n");
-                $page->render($this->parameters);
+                print(",");
+            }
+            if ($index > 0)
+            {
+                print(sprintf("[%.5f, %.5f, %.5f, %.5f]",
+                              $page->get_minlon(), $page->get_minlat(),
+                              $page->get_maxlon(), $page->get_maxlat()));
             }
         }
+?>
+  ];
+  var pages = new OpenLayers.Layer.Boxes("Pages");
+  for (var i = 0; i < page_extents.length; i++) {
+    bounds = OpenLayers.Bounds.fromArray(page_extents[i]).transform("EPSG:4326", "EPSG:900913");
+    page = new OpenLayers.Marker.Box(bounds);
+    page.events.register("click", page, function (e) {
+      show_page(this.bounds);
+    });
+    pages.addMarker(page);
+  }
+  map.addLayer(pages);
+}
+show_overview(<?php print(sprintf("%.5f, %.5f, 10", $center_lon, $center_lat)); ?>);
+</script>
+<?php
     }
 }
 ?>

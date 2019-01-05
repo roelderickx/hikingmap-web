@@ -248,43 +248,38 @@ class Tracks
                 $number >>= 5;
             }
             $chunk .= chr($number + 63);
-            $chunk = str_replace("\\", "\\\\", $chunk);
             $encodedString .= $chunk;
         }
         return $encodedString;
+    }
+    
+    private function __to_js_string($string)
+    {
+        return "'" . str_replace("\\", "\\\\", $string) . "'";
     }
     
     private function __add_tracks_as_polyline()
     {
 ?>
 <script type="text/javascript">
+function get_amount_tracks() { return <?php print(count($this->tracks)); ?>; }
 function get_track(index) {
 <?php
     foreach ($this->tracks as $index => $track)
     {
         if ($index > 0)
         {
-            print("    } else ");
+            print("  } else ");
         }
         else
         {
-            print("    ");
+            print("  ");
         }
         print("if (index == " . $index . ") {\n");
-        print("        return \"" . $this->__polyline_encode($track) . "\";\n");
+        print("    return " .
+              $this->__to_js_string($this->__polyline_encode($track)) . ";\n");
     }
 ?>
-    }
-}
-function add_tracks(map) {
-    for (var i = 0; i < <?php print(count($this->tracks)); ?>; i++) {
-        var tracklayer = new OpenLayers.Layer.Vector("track_" + i);
-        tracklayer.style = {strokeColor: "green", strokeWidth: 5, strokeOpacity: 0.5}
-        tracklayer.projection = new OpenLayers.Projection("EPSG:4326");
-        var format = new OpenLayers.Format.EncodedPolyline({geometryType:"linestring"});
-        tracklayer.addFeatures(new OpenLayers.Feature.Vector(
-            format.read(get_track(i)).geometry.transform('EPSG:4326', 'EPSG:3857')));
-        map.addLayer(tracklayer);
     }
 }
 </script>
@@ -295,33 +290,24 @@ function add_tracks(map) {
     {
 ?>
 <script type="text/javascript">
+function get_amount_waypoints() { return <?php print(count($this->waypoints)); ?>; }
 function get_waypoints(index) {
 <?php
     foreach ($this->waypoints as $index => $trackwaypoints)
     {
         if ($index > 0)
         {
-            print("    } else ");
+            print("  } else ");
         }
         else
         {
-            print("    ");
+            print("  ");
         }
         print("if (index == " . $index . ") {\n");
-        print("        return \"" . $this->__polyline_encode($trackwaypoints) . "\";\n");
+        print("    return " .
+              $this->__to_js_string($this->__polyline_encode($trackwaypoints)) . ";\n");
     }
 ?>
-    }
-}
-function add_waypoints(map) {
-    for (var i = 0; i < <?php print(count($this->waypoints)); ?>; i++) {
-        var wptlayer = new OpenLayers.Layer.Vector("wpt_" + i);
-        //wptlayer.style = {strokeColor: "green", strokeWidth: 5, strokeOpacity: 0.5}
-        wptlayer.projection = new OpenLayers.Projection("EPSG:4326");
-        var format = new OpenLayers.Format.EncodedPolyline({geometryType:"multipoint"});
-        wptlayer.addFeatures(new OpenLayers.Feature.Vector(
-            format.read(get_waypoints(i)).geometry.transform('EPSG:4326', 'EPSG:3857')));
-        map.addLayer(wptlayer);
     }
 }
 </script>

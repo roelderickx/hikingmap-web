@@ -29,10 +29,16 @@ include 'trackfinder.inc';
 <head>
     <title>Hikingmap web</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <script src="http://www.openlayers.org/api/OpenLayers.js"></script>
-    <script src="https://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
+    <link rel="stylesheet" href="hikingmap.css" type="text/css" />
+    <script language="javascript" type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script>
+    <script language="javascript" type="text/javascript" src="configuration.js"></script>
+    <script language="javascript" type="text/javascript" src="hikingmap.js"></script>
 </head>
 <body>
+    <div id="OverviewMap"></div>
+    <div id="DetailMap"></div>
+    <div id="fade"></div>
+
 <?php
     $logger = new Logger(false);
     

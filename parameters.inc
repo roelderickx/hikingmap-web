@@ -24,11 +24,9 @@ class Parameters
     private $pagewidth;
     private $pageheight;
     private $pageoverlap;
-    //private $generate_overview;
     private $render_waypts;
     private $waypt_distance;
     private $length_unit;
-    //private $page_order;
     
     function __construct($logger)
     {
@@ -86,11 +84,9 @@ class Parameters
         $this->logger->log('pagewidth = ' . $this->pagewidth);
         $this->logger->log('pageheight = ' . $this->pageheight);
         $this->logger->log('pageoverlap = ' . $this->pageoverlap);
-        //$this->logger->log('overview = ' . $this->generate_overview);
         $this->logger->log('render_waypts = ' . $this->render_waypts);
         $this->logger->log('waypt_distance = ' . $this->waypt_distance);
         $this->logger->log('length_unit = ' . $this->length_unit);
-        //$this->logger->log('page_order = ' . $this->page_order);
         
         return $this->all_files_valid();
     }

@@ -20,9 +20,6 @@
 include_once 'area.inc';
 include_once 'coordinate.inc';
 
-define('screenDpi', 72);
-define('inch', 2.54);
-
 class Page extends Area
 {
     public $orientation_unknown = 0;
@@ -296,6 +293,7 @@ class Page extends Area
     
     function center_map()
     {
+        $this->minlat = $this->track_area->minlat;
         $this->set_orientation($this->orientation);
         $this->minlon = $this->track_area->minlon +
                         $this->track_area->sizelon() / 2 -
@@ -305,67 +303,6 @@ class Page extends Area
                         $this->track_area->sizelat() / 2 -
                         $this->pagesizelat_full / 2;
         $this->maxlat = $this->minlat + $this->pagesizelat_full;
-    }
-    
-    function render($parameters)
-    {
-        $pagevar = "page" . $this->pageindex;
-        $pagename = "\"page_" . $this->pageindex . "\"";
-
-        $width = 300;
-        $height = 300 * max($this->pagewidth, $this->pageheight)
-                      / min($this->pagewidth, $this->pageheight);
-        if ($this->orientation == $this->orientation_landscape)
-        {
-            $width = $height;
-            $height = 300;
-        }
-        $style = sprintf("\"width:%dpx; height:%dpx\"", $width, $height);
-        
-        $lon = ($this->maxlon + $this->minlon) / 2;
-        $lat = ($this->maxlat + $this->minlat) / 2;
-        
-        /*$width_cm = $width / screenDpi * inch;
-        $delta_lon = $this->track_area->maxlon - $this->track_area->minlon;
-        $scale_lon = $this->_convert_degrees_lon_to_cm($delta_lon,
-                                                       $this->track_area->minlat) / $width_cm;
-        $height_cm = $height / screenDpi * inch;
-        $delta_lat = $this->track_area->maxlat - $this->track_area->minlat;
-        $scale_lat = $this->_convert_degrees_lat_to_cm($delta_lat) / $height_cm;
-        $previewscale = max($scale_lon, $scale_lat);*/
-?>
-<div style=<?php print($style); ?> id=<?php print($pagename); ?>></div>
-<script type="text/javascript">
-function render_<?php print($pagevar); ?>() {
-    var <?php print($pagevar); ?> = new OpenLayers.Map (<?php print($pagename); ?>, {
-        controls:[ new OpenLayers.Control.Attribution() ],
-        maxExtent: new OpenLayers.Bounds(-20037508.34, -20037508.34, 20037508.34,  20037508.34),
-        maxResolution: 156543.0399,
-        numZoomLevels: 19,
-        units: 'm',
-        projection: new OpenLayers.Projection("EPSG:900913"),
-        displayProjection: new OpenLayers.Projection("EPSG:4326")
-    } );
-
-    layerMapnik = new OpenLayers.Layer.OSM.Mapnik("Mapnik");
-    <?php print($pagevar); ?>.addLayer(layerMapnik);
-    
-    add_tracks(<?php print($pagevar); ?>);
-<?php
-    if ($parameters->render_waypoints())
-    {
-        print("    add_waypoints(" . $pagevar . ");\n");
-    }
-?>
-    var lon=<?php print(sprintf("%.5f", $lon)); ?>;
-    var lat=<?php print(sprintf("%.5f", $lat)); ?>;
-    var zoom=12;
-    var lonLat = new OpenLayers.LonLat(lon, lat).transform(new OpenLayers.Projection("EPSG:4326"), <?php print($pagevar); ?>.getProjectionObject());
-    <?php print($pagevar); ?>.setCenter(lonLat, zoom);
-}
-render_<?php print($pagevar); ?>();
-</script>
-<?php
     }
     
     function to_string()
@@ -381,10 +318,6 @@ render_<?php print($pagevar); ?>();
             $orientation_string = 'landscape';
         }
         $retval = $mapname . ' (' . $orientation_string . '): ' . parent::to_string();
-        if ($this->pageindex == 0)
-        {
-            $retval .= ', scale = 1:' . round($this->scale);
-        }
         
         return $retval;
     }
