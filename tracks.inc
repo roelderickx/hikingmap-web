@@ -293,6 +293,10 @@ class Tracks
             }
             print("}}");
         }
+        else
+        {
+            print(" function get_amount_waypoints() { return 0; } ");
+        }
         print("\n</script>\n");
     }
 }

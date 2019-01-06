@@ -9,5 +9,5 @@ There are a number of configuration settings which you can find in src/configura
 The most important setting is the tileserver which is set to localhost by default. Since this requires [mod_tile and renderd](https://switch2osm.org/manually-building-a-tile-server-16-04-2-lts/) to be installed on the users local machine you might choose to change this setting to null, which defaults to OpenStreetMap.
 Depending on the use case this might violate [the OpenStreetMap usage policy](https://operations.osmfoundation.org/policies/tiles/), although this will almost certainly not be the case for a typical user.
 
-To install copy all php, inc, js and css files from the main folder in this repository to a webserver. No additional installation steps are required.
+To install copy everything except the src folder, the LICENSE file and the READM.md file to a webserver. No additional installation steps are required.
 

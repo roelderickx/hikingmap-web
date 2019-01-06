@@ -154,7 +154,8 @@ function show_page(bounds, paper_width_cm, paper_height_cm, dpi)
         maxExtent: get_max_extent(),
         numZoomLevels: 20,
         controls: [
-            new OpenLayers.Control.ScaleLine()
+            new OpenLayers.Control.ScaleLine(),
+            new OpenLayers.Control.Attribution()
         ]
     };
     
