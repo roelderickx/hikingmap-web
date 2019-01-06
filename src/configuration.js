@@ -16,8 +16,21 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-tileserver = "/osm_tiles/${z}/${x}/${y}.png"; // set to null for OpenStreetMap
+// OSM tile server
+//tileserver = null;
+// tile server on localhost
+tileserver = "/osm_tiles/${z}/${x}/${y}.png";
 
-track_linestyle = { strokeColor: "green", strokeWidth: 5, strokeOpacity: 0.5 }
-waypoint_style = { fontSize: 12, fontColor: "#000000", fontFamily: "Arial, Helvetica, sans-serif", labelOutlineColor: "#ffffff", labelOutlineWidth: 1 }
+page_border_color = "red";
+page_border_width = 2;
+
+track_color = "green";
+track_width = 5;
+track_opacity = 0.5;
+
+waypoint_font = "Arial, Helvetica, sans-serif";
+waypoint_font_size = 12;
+waypoint_font_color = "black";
+waypoint_outline_width = 1;
+waypoint_outline_color = "white";
 

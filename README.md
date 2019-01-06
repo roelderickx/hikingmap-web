@@ -4,13 +4,15 @@ This is the PHP version of hikingmap. It aims at providing a web interface to hi
 
 ## Installation instructions
 
-Configuration needs to be done in configuration.js. The most important setting is the tileserver which is set to localhost by default. Since this requires mod_tile and renderd to be installed on the users local machine it you might choose to change this setting to null, which defaults to OpenStreetMap.
-Depending on the use case this might violate [the OpenStreetMap usage policy](https://operations.osmfoundation.org/policies/tiles/), although this will probably not be the case for a typical user.
+There are a number of configuration settings which you can find in src/configuration.js. However, hikingmap-web uses the compressed version in hikingmap.min.js, you either have to modify the compressed file or you have to regenerate this file from src/configuration.js and src/hikingmap.js using [UglifyJS](https://github.com/mishoo/UglifyJS2) after each modification.
 
-To install put all the files on a webserver, no additional installation steps are required.
+The most important setting is the tileserver which is set to localhost by default. Since this requires [mod_tile and renderd](https://switch2osm.org/manually-building-a-tile-server-16-04-2-lts/) to be installed on the users local machine you might choose to change this setting to null, which defaults to OpenStreetMap.
+Depending on the use case this might violate [the OpenStreetMap usage policy](https://operations.osmfoundation.org/policies/tiles/), although this will almost certainly not be the case for a typical user.
+
+To install copy all php, inc, js and css files from the main folder in this repository to a webserver. No additional installation steps are required.
 
 ## Limitations
 
-This repository is still in a testing phase, though it may already be useful to you. The python code is fully converted to PHP and the rendering is replaced by downloaded tiles from a server.
+The hikingmap python code is fully converted to PHP and the rendering is replaced by downloaded tiles from a server.
 However, the scaling is not yet correct. The math works but it is unclear how the boundaries of a map can be set with the OpenLayers library.
 

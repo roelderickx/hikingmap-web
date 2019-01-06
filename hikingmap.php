@@ -29,10 +29,9 @@ include 'trackfinder.inc';
 <head>
     <title>Hikingmap web</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" href="hikingmap.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="hikingmap.min.css" />
     <script language="javascript" type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script>
-    <script language="javascript" type="text/javascript" src="configuration.js"></script>
-    <script language="javascript" type="text/javascript" src="hikingmap.js"></script>
+    <script language="javascript" type="text/javascript" src="hikingmap.min.js"></script>
 </head>
 <body>
     <div id="OverviewMap"></div>

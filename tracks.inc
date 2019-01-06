@@ -269,18 +269,14 @@ function get_track(index) {
     {
         if ($index > 0)
         {
-            print("  } else ");
-        }
-        else
-        {
-            print("  ");
+            print("} else ");
         }
         print("if (index == " . $index . ") {\n");
-        print("    return " .
+        print("  return " .
               $this->__to_js_string($this->__polyline_encode($track)) . ";\n");
     }
 ?>
-    }
+}
 }
 </script>
 <?php
@@ -297,18 +293,14 @@ function get_waypoints(index) {
     {
         if ($index > 0)
         {
-            print("  } else ");
-        }
-        else
-        {
-            print("  ");
+            print("} else ");
         }
         print("if (index == " . $index . ") {\n");
-        print("    return " .
+        print("  return " .
               $this->__to_js_string($this->__polyline_encode($trackwaypoints)) . ";\n");
     }
 ?>
-    }
+}
 }
 </script>
 <?php
