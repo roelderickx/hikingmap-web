@@ -53,9 +53,7 @@ function add_waypoints(map)
 
 // function get_page_extents() is generated in trackfinder.inc
 
-var dragstart = null;
-
-function add_pages(map)
+function add_pages(map, paper_width_cm, paper_height_cm, dpi)
 {
     var page_extents = get_page_extents();
     var pages = new OpenLayers.Layer.Boxes("Pages");
@@ -63,22 +61,10 @@ function add_pages(map)
     {
         bounds = OpenLayers.Bounds.fromArray(page_extents[i]).transform("EPSG:4326", "EPSG:900913");
         page = new OpenLayers.Marker.Box(bounds);
-        page.events.register("mousedown", page, function (e) {
-            dragstart = { x: e.screenX, y: e.screenY }
-            map.events.handleBrowserEvent(e);
-            return true;
-        });
         page.events.register("mouseup", page, function (e) {
-            if (dragstart &&
-                (Math.abs(dragstart.x - e.screenX) < 5 ||
-                 Math.abs(dragstart.y - e.screenY) < 5))
+            if (!map.dragging)
             {
-                dragstart = null;
-                show_page(this.bounds);
-            }
-            else
-            {
-                dragstart = null;
+                show_page(this.bounds, paper_width_cm, paper_height_cm, dpi);
             }
             map.events.handleBrowserEvent(e);
             return true;
@@ -102,27 +88,21 @@ function get_max_resolution()
                     Math.abs(project_ext.top - project_ext.bottom) / tile_size);
 }
 
-function get_optimal_zoom(mapElementId, minLonLat, maxLonLat)
+function get_optimal_zoom(map_bounds, viewport_width, viewport_height)
 {
-    viewport_width = document.getElementById(mapElementId).clientWidth;
-    viewport_height = document.getElementById(mapElementId).clientHeight;
-    
     max_res = get_max_resolution();
-    zoom = 19;
-    do
-    {
-        zoom -= 1;
-        res = max_res / Math.pow(2, zoom);
-    }
-    while (zoom > 0 &&
-           ((maxLonLat.lon - minLonLat.lon) / res > viewport_width ||
-            (maxLonLat.lat - minLonLat.lat) / res > viewport_height)
-          );
+    zoom_width = Math.log((viewport_width * max_res) /
+                          (map_bounds.right - map_bounds.left)) /
+                 Math.log(2);
+    zoom_height = Math.log((viewport_height * max_res) /
+                           (map_bounds.top - map_bounds.bottom)) /
+                  Math.log(2);
     
-    return zoom;
+    return Math.floor(Math.min(zoom_width, zoom_height));
 }
 
-function show_overview(minlon, minlat, maxlon, maxlat) {
+function show_overview(minlon, minlat, maxlon, maxlat, paper_width_cm, paper_height_cm, dpi)
+{
     var options =
     {
         projection: new OpenLayers.Projection("EPSG:900913"),
@@ -148,20 +128,22 @@ function show_overview(minlon, minlat, maxlon, maxlat) {
     map.zoomIn();
 
     add_tracks(map);
-    add_pages(map);
+    add_pages(map, paper_width_cm, paper_height_cm, dpi);
 
-    var centerLonLat = new OpenLayers.LonLat((minlon + maxlon) / 2, (minlat + maxlat) / 2).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject());
-    var minLonLat = new OpenLayers.LonLat(minlon, minlat).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject());
-    var maxLonLat = new OpenLayers.LonLat(maxlon, maxlat).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject());
-    var zoom = get_optimal_zoom("OverviewMap", minLonLat, maxLonLat);
-    map.setCenter(centerLonLat, zoom);
+    var map_bounds = new OpenLayers.Bounds(minlon, minlat, maxlon, maxlat).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject());
+    
+    viewport_width = document.getElementById("OverviewMap").clientWidth;
+    viewport_height = document.getElementById("OverviewMap").clientHeight;
+    var zoom = get_optimal_zoom(map_bounds, viewport_width, viewport_height);
+    
+    map.setCenter(map_bounds.getCenterLonLat(), zoom);
 }
 
-function show_page(bounds)
+function show_page(bounds, paper_width_cm, paper_height_cm, dpi)
 {
-    document.getElementById('DetailMap').style.display = 'block';
-    document.getElementById('DetailMap').innerHTML = "<div style=\"align=right\"><a href=\"javascript:void(0)\" onclick=\"close_page()\">Close</a>";
-    document.getElementById('fade').style.display = 'block'
+    document.getElementById('DetailMapOverlay').style.display = 'block';
+    document.getElementById('DetailMap').innerHTML = "";
+    document.getElementById('fade').style.display = 'block';
   
     var options =
     {
@@ -172,11 +154,30 @@ function show_page(bounds)
         maxExtent: get_max_extent(),
         numZoomLevels: 20,
         controls: [
-          new OpenLayers.Control.MousePosition(),
-          new OpenLayers.Control.KeyboardDefaults()
+            new OpenLayers.Control.ScaleLine()
         ]
     };
-  
+    
+    preferred_xsize = Math.floor((paper_width_cm / 2.54) * dpi);
+    preferred_ysize = Math.floor((paper_height_cm / 2.54) * dpi);
+    // test works only in EPSG:900913 projection
+    if ((bounds.right - bounds.left) > (bounds.top - bounds.bottom))
+    {
+        temp = preferred_xsize;
+        preferred_xsize = preferred_ysize;
+        preferred_ysize = temp;
+    }
+    zoom = get_optimal_zoom(bounds, preferred_xsize, preferred_ysize);
+    
+    // recalculate x and y based on zoom level -- real dpi will be slightly lower
+    res = get_max_resolution() / Math.pow(2, zoom);
+    xsize = Math.floor((bounds.right - bounds.left) / res);
+    ysize = Math.floor((bounds.top - bounds.bottom) / res);
+    
+    document.getElementById('DetailMap').setAttribute("style", "width:" + xsize + "px;height:" + ysize + "px");
+    document.getElementById('DetailMap').style.width = "" + xsize + "px";
+    document.getElementById('DetailMap').style.height = "" + ysize + "px";
+    
     map = new OpenLayers.Map("DetailMap", options);
     var maplayer = new OpenLayers.Layer.OSM("Default", tileserver);
     map.addLayer(maplayer);
@@ -184,14 +185,12 @@ function show_page(bounds)
     add_tracks(map);
     add_waypoints(map);
 
-    // TODO calc center and zoom
-    var lonLat = bounds.getCenterLonLat();
-    map.setCenter(lonLat, 12);
+    map.setCenter(bounds.getCenterLonLat(), zoom);
 }
 
 function close_page()
 {
-    document.getElementById('DetailMap').style.display='none';
+    document.getElementById('DetailMapOverlay').style.display='none';
     document.getElementById('fade').style.display='none';
 }
 

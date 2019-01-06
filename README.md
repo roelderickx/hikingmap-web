@@ -11,8 +11,3 @@ Depending on the use case this might violate [the OpenStreetMap usage policy](ht
 
 To install copy all php, inc, js and css files from the main folder in this repository to a webserver. No additional installation steps are required.
 
-## Limitations
-
-The hikingmap python code is fully converted to PHP and the rendering is replaced by downloaded tiles from a server.
-However, the scaling is not yet correct. The math works but it is unclear how the boundaries of a map can be set with the OpenLayers library.
-

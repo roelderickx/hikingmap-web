@@ -33,14 +33,14 @@ class Tracks
         
         $this->tracks = array();
         $this->parse_files($files);
-        $this->__add_tracks_as_polyline();
 
         $this->waypoints = array();
         if ($render_waypoints)
         {
             $this->__calculate_waypoints($waypoint_dist, $length_unit);
-            $this->__add_waypoints_as_polyline();
         }
+        
+        $this->__add_tracks_waypoints_as_polyline($render_waypoints);
     }
     
     private function parse_files($files)
@@ -258,52 +258,42 @@ class Tracks
         return "'" . str_replace("\\", "\\\\", $string) . "'";
     }
     
-    private function __add_tracks_as_polyline()
+    private function __add_tracks_waypoints_as_polyline($render_waypoints)
     {
-?>
-<script type="text/javascript">
-function get_amount_tracks() { return <?php print(count($this->tracks)); ?>; }
-function get_track(index) {
-<?php
-    foreach ($this->tracks as $index => $track)
-    {
-        if ($index > 0)
+        print("<script type=\"text/javascript\">\n");
+        print("function get_amount_tracks() { return " . count($this->tracks) . "; } ");
+        print("function get_track(i) { ");
+        
+        foreach ($this->tracks as $index => $track)
         {
-            print("} else ");
+            if ($index > 0)
+            {
+                print("} else ");
+            }
+            print("if (i == " . $index . ") { ");
+            print("return " . $this->__to_js_string($this->__polyline_encode($track)) . ";");
         }
-        print("if (index == " . $index . ") {\n");
-        print("  return " .
-              $this->__to_js_string($this->__polyline_encode($track)) . ";\n");
-    }
-?>
-}
-}
-</script>
-<?php
-    }
-    
-    private function __add_waypoints_as_polyline()
-    {
-?>
-<script type="text/javascript">
-function get_amount_waypoints() { return <?php print(count($this->waypoints)); ?>; }
-function get_waypoints(index) {
-<?php
-    foreach ($this->waypoints as $index => $trackwaypoints)
-    {
-        if ($index > 0)
+        print("}}");
+        
+        if ($render_waypoints)
         {
-            print("} else ");
+            print(" function get_amount_waypoints() { return " .
+                  count($this->waypoints) . "; } ");
+            print("function get_waypoints(i) { ");
+            
+            foreach ($this->waypoints as $index => $trackwaypoints)
+            {
+                if ($index > 0)
+                {
+                    print("} else ");
+                }
+                print("if (i == " . $index . ") { ");
+                print("return " .
+                      $this->__to_js_string($this->__polyline_encode($trackwaypoints)) . ";");
+            }
+            print("}}");
         }
-        print("if (index == " . $index . ") {\n");
-        print("  return " .
-              $this->__to_js_string($this->__polyline_encode($trackwaypoints)) . ";\n");
-    }
-?>
-}
-}
-</script>
-<?php
+        print("\n</script>\n");
     }
 }
 ?>

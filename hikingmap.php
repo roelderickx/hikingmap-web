@@ -35,7 +35,14 @@ include 'trackfinder.inc';
 </head>
 <body>
     <div id="OverviewMap"></div>
-    <div id="DetailMap"></div>
+    <div id="DetailMapOverlay">
+        <div id="DetailMapHeader">
+            <a href="javascript:void(0)" onclick="close_page()"><img src="images/close.png" alt="Close" /></a>
+        </div>
+        <div id="DetailMapScrollPane">
+            <div id="DetailMap"></div>
+        </div>
+    </div>
     <div id="fade"></div>
 
 <?php
