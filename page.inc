@@ -253,6 +253,20 @@ class Page extends Area
         return $intersect_coord;
     }
     
+    function center_map()
+    {
+        $this->minlat = $this->track_area->minlat;
+        $this->set_orientation($this->orientation);
+        $this->minlon = $this->track_area->minlon +
+                        $this->track_area->sizelon() / 2 -
+                        $this->pagesizelon_full / 2;
+        $this->maxlon = $this->minlon + $this->pagesizelon_full;
+        $this->minlat = $this->track_area->minlat +
+                        $this->track_area->sizelat() / 2 -
+                        $this->pagesizelat_full / 2;
+        $this->maxlat = $this->minlat + $this->pagesizelat_full;
+    }
+    
     function add_page_to_overview($page)
     {
         if ($page->pageindex == 1 || $page->minlon < $this->track_area->minlon)
@@ -271,6 +285,7 @@ class Page extends Area
         {
             $this->track_area->maxlat = $page->maxlat;
         }
+        /* important when rendering to paper, but not when the result is shown on screen
         if ($this->track_area->maxlon - $this->track_area->minlon <
             $this->track_area->maxlat - $this->track_area->minlat)
         {
@@ -289,20 +304,16 @@ class Page extends Area
         $scale_lat = $this->_convert_degrees_lat_to_cm($delta_lat) /
                      ($this->get_page_height() - $this->pageoverlap);
         $this->scale = max($scale_lon, $scale_lat);
+        */
     }
     
-    function center_map()
+    function center_map_overview()
     {
+        // simplified function for output to screen in stead of paper
+        $this->minlon = $this->track_area->minlon;
+        $this->maxlon = $this->track_area->maxlon;
         $this->minlat = $this->track_area->minlat;
-        $this->set_orientation($this->orientation);
-        $this->minlon = $this->track_area->minlon +
-                        $this->track_area->sizelon() / 2 -
-                        $this->pagesizelon_full / 2;
-        $this->maxlon = $this->minlon + $this->pagesizelon_full;
-        $this->minlat = $this->track_area->minlat +
-                        $this->track_area->sizelat() / 2 -
-                        $this->pagesizelat_full / 2;
-        $this->maxlat = $this->minlat + $this->pagesizelat_full;
+        $this->maxlat = $this->track_area->maxlat;
     }
     
     function to_string()

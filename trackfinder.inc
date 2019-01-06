@@ -179,18 +179,14 @@ class TrackFinder
         {
             $overviewpage->add_page_to_overview($page);
         }
-        $overviewpage->center_map();
+        $overviewpage->center_map_overview();
         array_splice($this->pages, 0, 0, array($overviewpage));
     }
     
     function render()
     {
-        $center_lon = ($this->pages[0]->get_minlon() + $this->pages[0]->get_maxlon()) / 2;
-        $center_lat = ($this->pages[0]->get_minlat() + $this->pages[0]->get_maxlat()) / 2;
-?>
-<script type="text/javascript">
-function get_page_extents() {
-<?php
+        print("<script type=\"text/javascript\">\n");
+        print("function get_page_extents() {\n");
         print("  return [");
         foreach ($this->pages as $index => $page)
         {
@@ -205,12 +201,12 @@ function get_page_extents() {
                               $page->get_maxlon(), $page->get_maxlat()));
             }
         }
-        print("];\n");
-?>
-}
-show_overview(<?php print(sprintf("%.5f, %.5f, 10", $center_lon, $center_lat)); ?>);
-</script>
-<?php
+        print("];\n}\n");
+        
+        print(sprintf("show_overview(%.5f,%.5f,%.5f,%.5f);\n",
+                      $this->pages[0]->get_minlon(), $this->pages[0]->get_minlat(),
+                      $this->pages[0]->get_maxlon(), $this->pages[0]->get_maxlat()));
+        print("</script>\n");
     }
 }
 ?>

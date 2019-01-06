@@ -89,14 +89,47 @@ function add_pages(map)
     map.addLayer(pages);
 }
 
-function show_overview(centerlon, centerlat, zoom) {
+function get_max_extent()
+{
+    return new OpenLayers.Bounds(-20037508.342789244, -20037508.342789244, 20037508.342789244,  20037508.342789244);
+}
+
+function get_max_resolution()
+{
+    tile_size = 256;
+    project_ext = get_max_extent();
+    return Math.min(Math.abs(project_ext.right - project_ext.left) / tile_size,
+                    Math.abs(project_ext.top - project_ext.bottom) / tile_size);
+}
+
+function get_optimal_zoom(mapElementId, minLonLat, maxLonLat)
+{
+    viewport_width = document.getElementById(mapElementId).clientWidth;
+    viewport_height = document.getElementById(mapElementId).clientHeight;
+    
+    max_res = get_max_resolution();
+    zoom = 19;
+    do
+    {
+        zoom -= 1;
+        res = max_res / Math.pow(2, zoom);
+    }
+    while (zoom > 0 &&
+           ((maxLonLat.lon - minLonLat.lon) / res > viewport_width ||
+            (maxLonLat.lat - minLonLat.lat) / res > viewport_height)
+          );
+    
+    return zoom;
+}
+
+function show_overview(minlon, minlat, maxlon, maxlat) {
     var options =
     {
         projection: new OpenLayers.Projection("EPSG:900913"),
         displayProjection: new OpenLayers.Projection("EPSG:4326"),
         units: "m",
-        maxResolution: 156543.0339,
-        maxExtent: new OpenLayers.Bounds(-20037508.34, -20037508.34, 20037508.34,  20037508.34),
+        maxResolution: get_max_resolution(),
+        maxExtent: get_max_extent(),
         numZoomLevels: 20,
         controls: [
             new OpenLayers.Control.Navigation(),
@@ -117,9 +150,11 @@ function show_overview(centerlon, centerlat, zoom) {
     add_tracks(map);
     add_pages(map);
 
-    // TODO get bounds from parameters and calculate optimal center and zoom
-    var lonLat = new OpenLayers.LonLat(centerlon, centerlat).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject());
-    map.setCenter(lonLat, zoom);
+    var centerLonLat = new OpenLayers.LonLat((minlon + maxlon) / 2, (minlat + maxlat) / 2).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject());
+    var minLonLat = new OpenLayers.LonLat(minlon, minlat).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject());
+    var maxLonLat = new OpenLayers.LonLat(maxlon, maxlat).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject());
+    var zoom = get_optimal_zoom("OverviewMap", minLonLat, maxLonLat);
+    map.setCenter(centerLonLat, zoom);
 }
 
 function show_page(bounds)
@@ -133,8 +168,8 @@ function show_page(bounds)
         projection: new OpenLayers.Projection("EPSG:900913"),
         displayProjection: new OpenLayers.Projection("EPSG:4326"),
         units: "m",
-        maxResolution: 156543.0339,
-        maxExtent: new OpenLayers.Bounds(-20037508.34, -20037508.34, 20037508.34,  20037508.34),
+        maxResolution: get_max_resolution(),
+        maxExtent: get_max_extent(),
         numZoomLevels: 20,
         controls: [
           new OpenLayers.Control.MousePosition(),
