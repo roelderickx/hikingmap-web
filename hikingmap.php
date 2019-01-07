@@ -30,7 +30,7 @@ include 'trackfinder.inc';
     <title>Hikingmap web</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <link rel="stylesheet" type="text/css" href="hikingmap.min.css" />
-    <script language="javascript" type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script>
+    <script language="javascript" type="text/javascript" src="https://openlayers.org/api/OpenLayers.js"></script>
     <script language="javascript" type="text/javascript" src="hikingmap.min.js"></script>
 </head>
 <body>

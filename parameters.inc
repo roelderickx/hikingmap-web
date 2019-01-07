@@ -66,11 +66,13 @@ class Parameters
                     $this->logger->error('Error: File is empty.');
                     return false;
                 }
-                else if ($file["type"] != 'application/gpx+xml')
+                // this is apparently not always true, mime-type may be
+                // application/octet-stream as well
+                /*else if ($file["type"] != 'application/gpx+xml')
                 {
                     $this->logger->error('Error: File is not a gpx file.');
                     return false;
-                }
+                }*/
             }
         }
         
