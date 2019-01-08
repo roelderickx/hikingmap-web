@@ -21,6 +21,7 @@ class Parameters
 {
     private $logger;
     private $scale;
+    private $dpi;
     private $pagewidth;
     private $pageheight;
     private $pageoverlap;
@@ -33,6 +34,7 @@ class Parameters
         $this->logger = $logger;
         
         $this->scale = htmlentities($_POST['scale'], ENT_COMPAT, 'UTF-8');
+        $this->dpi = htmlentities($_POST['dpi'], ENT_COMPAT, 'UTF-8');
         $this->pagewidth = htmlentities($_POST['width'], ENT_COMPAT, 'UTF-8');
         $this->pageheight = htmlentities($_POST['height'], ENT_COMPAT, 'UTF-8');
         $this->pageoverlap = htmlentities($_POST['overlap'], ENT_COMPAT, 'UTF-8');
@@ -83,6 +85,7 @@ class Parameters
     {
         $this->logger->log('Parameters:');
         $this->logger->log('scale = ' . $this->scale);
+        $this->logger->log('dpi = ' . $this->dpi);
         $this->logger->log('pagewidth = ' . $this->pagewidth);
         $this->logger->log('pageheight = ' . $this->pageheight);
         $this->logger->log('pageoverlap = ' . $this->pageoverlap);
@@ -96,6 +99,11 @@ class Parameters
     function get_scale()
     {
         return (float)$this->scale;
+    }
+    
+    function get_dpi()
+    {
+        return $this->dpi;
     }
     
     function get_pagewidth()

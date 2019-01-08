@@ -40,6 +40,12 @@
             </td>
             </tr>
             <tr>
+            <td><label for="dpi">Output DPI</label></td>
+            <td colspan="2">
+                <input type="text" id="dpi" name="dpi" value="300" size="4"/>
+            </td>
+            </tr>
+            <tr>
             <td><label for="width">Paper width</label></td>
             <td colspan="2">
                 <input type="text" id="width" name="width" value="200" size="4"/> mm

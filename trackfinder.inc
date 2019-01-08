@@ -203,11 +203,12 @@ class TrackFinder
         }
         print("];} ");
         
-        print(sprintf("show_overview(%.5f,%.5f,%.5f,%.5f,%.2f,%.2f,300);\n",
+        print(sprintf("show_overview(%.5f,%.5f,%.5f,%.5f,%.2f,%.2f,%d);\n",
                       $this->pages[0]->get_minlon(), $this->pages[0]->get_minlat(),
                       $this->pages[0]->get_maxlon(), $this->pages[0]->get_maxlat(),
                       $this->parameters->get_pagewidth(),
-                      $this->parameters->get_pageheight()));
+                      $this->parameters->get_pageheight(),
+                      $this->parameters->get_dpi()));
         print("</script>\n");
     }
 }
