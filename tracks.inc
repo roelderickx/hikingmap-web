@@ -47,14 +47,21 @@ class Tracks
     {
         foreach ($files as $file)
         {
-            $gpx = new SimpleXMLElement($file["tmp_name"], null, true);
-            
-            foreach ($gpx as $trk)
+            try
             {
-                if ($trk->getName() == "trk")
+                $gpx = new SimpleXMLElement($file["tmp_name"], null, true);
+            
+                foreach ($gpx as $trk)
                 {
-                    $this->parse_track($trk);
+                    if ($trk->getName() == "trk")
+                    {
+                        $this->parse_track($trk);
+                    }
                 }
+            }
+            catch (Exception $e)
+            {
+                $this->logger->error("Error: File is not a valid gpx file.");
             }
         }
     }

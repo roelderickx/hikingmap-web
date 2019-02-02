@@ -50,6 +50,7 @@ class TrackFinder
             $this->firstpointaccepted = false;
             foreach ($trackpermutation as $track)
             {
+                set_time_limit(30);
                 $prev_coord = new Coordinate(0.0, 0.0);
                 foreach ($track as $coord)
                 {
