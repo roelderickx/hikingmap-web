@@ -28,6 +28,7 @@ class TrackFinder
     private $currentpageindex;
     private $currentpage;
     private $firstpointaccepted;
+    private $pointskipped;
     private $pages;
 
     function __construct($logger, $parameters, $tracks)
@@ -36,36 +37,23 @@ class TrackFinder
         $this->parameters = $parameters;
         $this->pages = array();
         
-        $this->logger->log('Calculating track order permutation resulting ' .
-                           'in a minimum amount of pages');
-        $this->logger->log('This may take a while, checking ' .
-                           $this->__factorial(count($tracks->get_tracks())) .
-                           ' track permutations');
-        $min_amount_pages = -1;
-        foreach ($this->__calc_permutations($tracks->get_tracks()) as $trackpermutation)
+        $this->renderedareas = array();
+        $this->currentpageindex = 1;
+        $this->currentpage = null;
+        $this->firstpointaccepted = false;
+        foreach ($tracks->get_tracks() as $track)
         {
-            $this->renderedareas = array();
-            $this->currentpageindex = 1;
-            $this->currentpage = null;
-            $this->firstpointaccepted = false;
-            foreach ($trackpermutation as $track)
+            set_time_limit(30);
+            $this->pointskipped = true;
+            $prev_coord = new Coordinate(0.0, 0.0);
+            foreach ($track as $coord)
             {
-                set_time_limit(30);
-                $prev_coord = new Coordinate(0.0, 0.0);
-                foreach ($track as $coord)
-                {
-                    $prev_coord = $this->__add_point($prev_coord, $coord);
-                }
-                $this->__flush();
+                $prev_coord = $this->__add_point($prev_coord, $coord);
             }
-            if ($min_amount_pages == -1 || count($this->renderedareas) < $min_amount_pages)
-            {
-                $min_amount_pages = count($this->renderedareas);
-                $this->pages = $this->renderedareas;
-                $this->logger->log('Found track permutation with ' .
-                                   $min_amount_pages . ' pages');
-            }
+            $this->__flush();
         }
+        $this->pages = $this->renderedareas;
+        
         $this->__add_page_overview();
     }
     
@@ -115,6 +103,11 @@ class TrackFinder
             {
                 $prev_coord = $this->__add_next_point($prev_coord, $coord);
             }
+            $this->pointskipped = false;
+        }
+        else
+        {
+            $this->pointskipped = true;
         }
         return $prev_coord;
     }
@@ -160,17 +153,26 @@ class TrackFinder
         $outside_page = $this->currentpage->add_next_point($prev_coord, $coord);
         if ($outside_page)
         {
-            $border_coord = $this->currentpage->calc_border_point($prev_coord, $coord);
+            //$border_coord = $this->currentpage->calc_border_point($prev_coord, $coord);
+            $this->currentpage->remove_last_point();
+            if (!$this->pointskipped)
+            {
+                $border_coord = $this->currentpage->calc_border_point($prev_coord, $coord);
+                $this->currentpage->add_next_point($prev_coord, $border_coord);
+            }
             $this->currentpage->center_map();
             $this->renderedareas[] = $this->currentpage;
-            $this->__add_first_point($border_coord);
-            $this->__add_next_point($border_coord, $coord);
-            return $border_coord;
+            if (!$this->pointskipped)
+            {
+                $this->__add_first_point($border_coord);
+                $this->__add_next_point($border_coord, $coord);
+            }
+            else
+            {
+                $this->__add_first_point($coord);
+            }
         }
-        else
-        {
-            return $coord;
-        }
+        return $coord;
     }
 
     function __add_page_overview()

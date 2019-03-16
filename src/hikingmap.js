@@ -195,3 +195,9 @@ function close_page()
     document.getElementById('fade').style.display='none';
 }
 
+/* TODO
+   see: https://gis.stackexchange.com/questions/22445/print-library-for-openlayers/148862#148862
+function save_map() {
+    ...
+}
+*/

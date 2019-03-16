@@ -33,6 +33,7 @@ class Page extends Area
     private $pageoverlap;
     private $orientation;
     private $track_area;
+    private $prev_track_area;
     private $pagesizelon;
     private $pagesizelat;
     private $pagesizelon_full;
@@ -48,6 +49,7 @@ class Page extends Area
         $this->pageoverlap = $parameters->get_pageoverlap();
         $this->set_orientation($this->orientation_unknown);
         $this->track_area = new Area(new Coordinate(0.0, 0.0), new Coordinate(0.0, 0.0));
+        $this->prev_track_area = new Area(new Coordinate(0.0, 0.0), new Coordinate(0.0, 0.0));
     }
     
     function get_page_width()
@@ -106,7 +108,40 @@ class Page extends Area
     function initialize_first_point($coord)
     {
         $this->track_area = new Area($coord, $coord);
+        $this->prev_track_area = new Area($coord, $coord);
         $this->set_orientation($this->orientation_unknown);
+    }
+    
+    function __add_point_to_track_area($coord)
+    {
+        if ($coord->get_lon() < $this->track_area->minlon)
+        {
+            $this->prev_track_area->minlon = $this->track_area->minlon;
+            $this->track_area->minlon = $coord->get_lon();
+            $this->maxlon = $this->track_area->maxlon;
+            $this->minlon = $this->maxlon - $this->pagesizelon;
+        }
+        else if ($coord->get_lon() > $this->track_area->maxlon)
+        {
+            $this->prev_track_area->maxlon = $this->track_area->maxlon;
+            $this->track_area->maxlon = $coord->get_lon();
+            $this->minlon = $this->track_area->minlon;
+            $this->maxlon = $this->minlon + $this->pagesizelon;
+        }
+        if ($coord->get_lat() < $this->track_area->minlat)
+        {
+            $this->prev_track_area->minlat = $this->track_area->minlat;
+            $this->track_area->minlat = $coord->get_lat();
+            $this->maxlat = $this->track_area->maxlat;
+            $this->minlat = $this->maxlat - $this->pagesizelat;
+        }
+        else if ($coord->get_lat() > $this->track_area->maxlat)
+        {
+            $this->prev_track_area->maxlat = $this->track_area->maxlat;
+            $this->track_area->maxlat = $coord->get_lat();
+            $this->minlat = $this->track_area->minlat;
+            $this->maxlat = $this->minlat + $this->pagesizelat;
+        }
     }
     
     function __track_area_outside_page()
@@ -121,30 +156,8 @@ class Page extends Area
     
     function add_next_point($prev_coord, $coord)
     {
-        if ($coord->get_lon() < $this->track_area->minlon)
-        {
-            $this->track_area->minlon = $coord->get_lon();
-            $this->maxlon = $this->track_area->maxlon;
-            $this->minlon = $this->maxlon - $this->pagesizelon;
-        }
-        else if ($coord->get_lon() > $this->track_area->maxlon)
-        {
-            $this->track_area->maxlon = $coord->get_lon();
-            $this->minlon = $this->track_area->minlon;
-            $this->maxlon = $this->minlon + $this->pagesizelon;
-        }
-        if ($coord->get_lat() < $this->track_area->minlat)
-        {
-            $this->track_area->minlat = $coord->get_lat();
-            $this->maxlat = $this->track_area->maxlat;
-            $this->minlat = $this->maxlat - $this->pagesizelat;
-        }
-        else if ($coord->get_lat() > $this->track_area->maxlat)
-        {
-            $this->track_area->maxlat = $coord->get_lat();
-            $this->minlat = $this->track_area->minlat;
-            $this->maxlat = $this->minlat + $this->pagesizelat;
-        }
+        $this->__add_point_to_track_area($coord);
+        
         $outside_page = false;
         if ($this->orientation == $this->orientation_unknown)
         {
@@ -173,6 +186,11 @@ class Page extends Area
             $outside_page = $this->__track_area_outside_page() > 0;
         }
         return $outside_page;
+    }
+    
+    function remove_last_point()
+    {
+        $this->track_area = $this->prev_track_area;
     }
     
     function __calc_intersection_lon($l_start, $l_end, $lon)
